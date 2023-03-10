@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% load static %}
+    <title>سامانه هشدار سیل شهر تهران</title>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{% static "img/logo_header.png" %}"/>
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link href="{% static "css/modal.css" %}" rel="stylesheet"/>
+	<link href="{% static "css/style.css" %}" rel="stylesheet"/>
+    <link href="{% static "js/ol/ol.css" %}" rel="stylesheet"/>
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.4.3/css/ol.css" type="text/css">
+{#	<script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>#}
+	<script src="{% static "./js/ol/ol.js" %}"></script>
+    <script src="{% static "js/onload.js" %}"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
+	<script src="{% static "js/jquery-3.3.1.min.js" %}" type="text/javascript"></script>
+	<script  type="text/javascript" src="{% static "./js/jquery-3.3.1.min.js" %}"></script>
+	
+	<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.js"></script>
+
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+	
+    <link rel="stylesheet" href="{% static "css/style2.css" %}">
+	<script type="text/javascript" src="{% static "js/drawChart.js" %}"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.js"></script>
+	
+	<script>
+  $( function() {
+    $( "#dialog" ).dialog({
+      height: 460,
+      width: 800,
+      autoOpen: false,
+      show: {
+        effect: "blind",
+        duration: 1000
+      },
+      hide: {
+        effect: "explode", // hide, 
+        duration: 1000
+      }
+    });
+ 
+    $( "#opener" ).on( "click", function() {
+      $( "#dialog" ).dialog( "open" );
+    });
+  } );
+  </script>
+	<style>
+	label, input { display:block; }
+	input.text { margin-bottom:12px; width:95%; padding: .4em; }
+	fieldset { padding:0; border:0; margin-top:25px; }
+	h1 { font-size: 1.2em; margin: .6em 0; }
+	div#users-contain { width: 350px; margin: 20px 0; }
+	div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+	div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+	.ui-dialog .ui-state-error { padding: .3em; }
+	.validateTips { border: 1px solid transparent; padding: 0.3em; }
+  </style>
+</head>
+
+<body onload="divExtent()">
+	<div id="container">
+		<header id="header">
+		<img src="{% static "img/logo.png" %}" style="height: 50px; float: right; margin: 10px 20px 10px 0;" />
+		<p style="float: right; line-height: 67px; margin-right: 30px; color: white; font-size: 1.5em;">سامانه هشدار سیل شهر تهران</p>
+		<div style="direction: ltr;padding: 20px 5px;">
+			<a class="menu" href="#">تنظیمات</a>
+			{% if user.is_authenticated %}
+			    <a class="menu" href="#logout">خروج </a>
+		    {% else %}
+			    <a class="menu" href="#login">ورود </a>
+			{% endif %}
+		</div>
+		</header>
+		
+		<div id="wrapper">
+		<div id="login" class="modalDialog" style="background-image: url(images/front.jpg); ">
+				<div>
+					<a href="#" title="Close" class="close">X</a>
+					<h2>صفحه ورود</h2>
+					<br/>
+					<form action="http://127.0.0.1:8000/login/" method="POST">
+						<label for="uname"><b>نام کاربری : </b></label>
+						<input type="text" placeholder="نام کاربری را وارد کنید." name="uname" required>
+						<br/><br/>
+						<label for="psw"><b>رمز عبور : </b></label>
+						<input type="password" placeholder="رمز عبور را وارد کنید." name="psw" required>
+						<br/><br/>
+						<button type="submit">ورود</button>
+						<a href="/signup/">ثبت نام</a>
+					</form>
+				</div>
+			</div>
+			<div id="logout" class="modalDialog" style="background-image: url(images/front.jpg); ">
+				<div>
+					<a href="#" title="Close" class="close">X</a>
+					<h2>خروج</h2>
+					<br/>
+					<p>آیا قصد خروج دارید؟</p><br/>
+					<a id="exit" href="/logout/" style="border: 1px solid; border-radius: 3px; padding: 0 10px; ">بلی</a>
+				</div>
+			</div>
+		    <div id="toolbox">
+				<div id="labels">
+					<label class="myButton"for="mapTools1" >لایه ها</label>
+					<input type="checkbox" name="mapTools1" id="mapTools1" class="hiddenInputs" checked/>
+					
+					<label class="myButton"for="mapTools2" >نتایج</label>
+					<input type="checkbox" name="mapTools2" id="mapTools2" class="hiddenInputs"/>
+				</div>
+				<div id="toolsWindow">
+				    <div id="tools1" class="tools contentWindow">
+					
+					<div class="layers">
+					
+					<table class="table table-hover" style="direction: rtl; user-select: none">
+					  <thead>
+						<tr>
+						  <th scope="col">#</th>
+						  <th scope="col">لایه</th>
+						  <th colspan="2" scope="col">نمایش</th>
+						</tr>
+					  </thead>
+					  <tbody>
+						<tr>
+						  <th scope="row">1</th>
+						  <td colspan="2">نقشه bing</td>
+						  <td><input class="layerLable" type="radio" name="baseLayerRadioButton" value="bingMap" CHECKED /></td>
+						</tr>
+						<tr>
+						  <th scope="row">2</th>
+						  <td colspan="2">نقشه OSM</td>
+						  <td><input class="layerLable" type="radio" name="baseLayerRadioButton" value="OSMStandard" /></td>
+						</tr>
+						<tr>
+						  <th scope="row">3</th>
+						  <td colspan="2">نقشه Humanitarian</td>
+						  <td><input class="layerLable" type="radio" name="baseLayerRadioButton" value="OSMHumanitarian"/></td>
+						</tr>
+						<tr>
+						  <th scope="row">4</th>
+						  <td colspan="2">نقشه Stamen</td>
+						  <td><input class="layerLable" type="radio" name="baseLayerRadioButton" value="StamenTerrain" /></td>
+						</tr>
+						<tr>
+						  <th scope="row">5</th>
+						  <td colspan="2">محدوده شهر تهران</td>
+						  <td><input type="checkbox" id="boundary" name="boundary" value="boundary" onclick="visibility('boundary')"/></td>
+						</tr>
+						<tr>
+						  <th scope="row">6</th>
+						  <td colspan="2">مناطق</td>
+						  <td><input type="checkbox" id="Regions" name="Regions" value="Regions" onclick="visibility('Regions')"/></td>
+						</tr>
+						<tr>
+						  <th scope="row">7</th>
+						  <td colspan="2">رودخانه های اصلی</td>
+						  <td><input type="checkbox" id="mainRivers" name="mainRivers" value="mainRivers" onclick="visibility('mainRivers')"/></td>
+						</tr>
+						<tr>
+						  <th scope="row">8</th>
+						  <td colspan="2">حریم رودخانه</td>
+						  <td><input type="checkbox" id="Harim" name="Harim" value="Harim" onclick="visibility('Harim')"/></td>
+						</tr>
+					  </tbody>
+					</table>
+                 
+                  </div>
+					
+					</div>
+					<div id="tools2" class="tools contentWindow">
+					
+					<label for="t1" class="dropdown" >نمودار</label>
+						<input name="acord" type="radio" id="t1" class="hiddenInputs" checked/>
+						<div>
+							<div>
+							
+							</div>
+						</div>
+						
+						<label for="t2"class="dropdown">شاخص های آماری</label>
+						<input name="acord" type="radio" id="t2" class="hiddenInputs"/>
+						<div>
+							<div>
+
+							</div>
+						</div>
+						
+						<label for="t3" class="dropdown">اعلام هشدار</label>
+						<input name="acord" type="radio" id="t3" class="hiddenInputs"/>
+						<div>
+							<div>
+														 
+							</div>
+						</div>
+					
+					</div>
+				</div>
+			</div>
+			<div id="mapView">
+				<div id="map"></div>
+			</div>
+			<div id="toc">
+			  <div id="tocheader"></div>
+			  <div id="toc_content">
+				<div class="card border-primary mb-3" style="max-width: 18rem;">
+				  <div class="card-header">اجرا</div>
+				  <div class="card-body">
+				   <form action="http://127.0.0.1:8000/simulate/" method="POST">
+						<input type="submit" name="insert" class="btn btn-warning" value="مدل هیدرولوژیکی برون شهری" >
+					</form>
+					<form action="http://127.0.0.1:8000/swmm_simulate/" method="POST">
+						<input type="submit" name="insert" class="btn btn-warning" value="مدل هیدرولوژیکی درون شهری" >
+					</form>
+				  </div>
+				</div>
+				<div class="card border-primary mb-3" style="max-width: 18rem;">
+				  <div class="card-header">تنظیم خروجی</div>
+				  <div class="card-body">
+				  <button id="opener" class="btn btn-primary">مشاهده نتایج</button>
+					<select class="form-select" name="form-select" onchange="updateChart(this);">
+						<option value="0">انتخاب موقعیت</option>
+						<option value="1">کن</option>
+						<option value="2">دآراباد</option>
+						<option value="3">فرحزاد</option>
+						<option value="4">سرخه حصار</option>
+					</select>
+
+					<label for="customRange3" class="form-label">گام زمانی</label>
+					<input id="ex6" type="range" class="form-range" min="0" max="5" step="0.5" id="customRange3">
+					<span id="newValue" value="0">0</span>
+				  </div>
+				</div>
+	
+				
+				
+				<!--<form oninput="result.value=parseInt(a.value)">
+					<input type="range" name="a" value="50" /> =
+					<output name="result">0</output>
+				</form>-->
+							  
+			  </div>
+			</div>
+		</div>
+	</div>
+    <div id="dialog" title="نتایج">
+		<P id="hint" style="text-align: center">لطفا موقعیت خروجی را مشخص نمایید</p>
+		<canvas id="chart"></canvas>
+	</div>
+	
+	<script type="text/javascript" src="{% static "./js/downloadFile.js" %}"></script>
+	<script type="text/javascript" src="{% static "./js/resize.js" %}"></script>
+
+	<script src="{% static "./js/map.js" %}"></script>
+
+
+	<script type="text/javascript" src="{% static "./js/controller.js" %}"></script>
+	<script src="src="{% static "./js/chart-area-demo.js" %}"></script>
+	<script language="JavaScript">
+	
+	 // Get Results
+	function updateChart(sel){
+		
+		let resultLable = sel.options[sel.selectedIndex].text;
+		let result = [];
+		let results = {{ results }};
+		result = results;
+		document.getElementById("hint").style.display="none";
+		 
+		 // Area Chart Example
+		var ctx = document.getElementById("chart").getContext("2d");
+		ctx.reset();
+		
+		let s_time = "2022";
+		let timeTable = [];
+		timeTable.push(s_time);
+		for (let i = 2; i < 60; i++) {
+		  timeTable.push(String(i));
+		}
+		  let chart = new Chart(ctx, {
+		  type: "line",
+		  data: {
+			 labels: timeTable,
+			 showXLabels: 10,
+			 datasets: [
+				{
+				  label: resultLable,
+				  data: result,
+				  pointBackgroundColor: function(context) {
+					  var index = context.dataIndex;
+					  var value = context.dataset.data[index];
+					  return value < 20 ? 'blue': (value < 60 ? 'yellow' : (value > 100 ? 'red':'orange'));
+				  }
+				},
+				{
+				  label: "سطح هشدار زرد",
+				  backgroundColor: "#fffe00",
+				  borderColor: "#fffe00",
+				  fill: false,
+				  align: 'center',
+				  data: [20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20],
+				},
+				{
+				  label: "سطح هشدار نارنجی",
+				  backgroundColor: "#ff8800",
+				  borderColor: "#ff8800",
+				  fill: false,
+				  align: 'center',
+				  data: [60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60,60],
+				},
+				{
+				  label: "سطح هشدار قرمز",
+				  backgroundColor: "#f00",
+				  borderColor: "#f00",
+				  fill: false,
+				  align: 'center',
+				  data: [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],
+				}
+			 ]
+		  },
+		  options: {
+			 title: {
+				text: "منحنی عمق جریان",
+				display: false,
+			 },
+			 elements:{
+					point:{
+						borderWidth: 0,
+						radius: 0,
+						backgroundColor: 'rgba(0,0,0,0)',
+					}
+				}
+		  }
+		});
+	}
+	</script>
+</body>
+</html>
